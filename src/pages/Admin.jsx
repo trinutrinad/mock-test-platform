@@ -32,6 +32,7 @@ export default function Admin() {
             const { data, error } = await supabase
                 .from('exams')
                 .select('*, questions(count)')
+                // .eq('is_deleted', false) // Temporarily removed: column missing in DB
                 .order('created_at', { ascending: false })
 
             if (error) throw error
@@ -204,8 +205,34 @@ export default function Admin() {
                                     <button
                                         onClick={async () => {
                                             if (!window.confirm('Delete exam "' + exam.name + '"?')) return
-                                            const { error } = await supabase.from('exams').delete().eq('id', exam.id)
-                                            if (!error) fetchExams()
+                                            try {
+                                                // Check for existing attempts for this exam (for confirmation message)
+                                                const { count, error: countError } = await supabase
+                                                    .from('attempts')
+                                                    .select('*', { count: 'exact', head: true })
+                                                    .eq('exam_id', exam.id)
+
+                                                if (!countError && count > 0) {
+                                                    const confirmMsg = `Exam "${exam.name}" has ${count} attempt(s). This will permanently delete the exam, its questions, and all attempt data. Proceed?`
+                                                    if (!window.confirm(confirmMsg)) return
+                                                }
+
+                                                // Use RPC so deletes run with sufficient privileges (avoids FK + RLS issues)
+                                                const { error: rpcError } = await supabase.rpc('delete_exam', {
+                                                    target_exam_id: exam.id
+                                                })
+
+                                                if (rpcError) {
+                                                    console.error('Error deleting exam:', rpcError)
+                                                    alert('Failed to delete exam: ' + (rpcError.message || JSON.stringify(rpcError)))
+                                                } else {
+                                                    alert('Exam deleted.')
+                                                    fetchExams()
+                                                }
+                                            } catch (err) {
+                                                console.error('Unexpected error during delete:', err)
+                                                alert('Unexpected error deleting exam')
+                                            }
                                         }}
                                         style={{ padding: '0.25rem 0.5rem', cursor: 'pointer', background: '#dc3545', color: 'white', border: 'none', borderRadius: '4px' }}
                                     >

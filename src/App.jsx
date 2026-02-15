@@ -9,6 +9,11 @@ import ExamRoom from './pages/ExamRoom'
 import Result from './pages/Result'
 import Leaderboard from './pages/Leaderboard'
 import Admin from './pages/Admin'
+import AllExams from './pages/AllExams'
+import Reports from './pages/Reports'
+import StudyRoom from './pages/StudyRoom'
+import ExamInfo from './pages/ExamInfo'
+import Tutorials from './pages/Tutorials'
 import NotFound from './pages/NotFound'
 
 import { useAuth } from './context/AuthContext'
@@ -77,6 +82,67 @@ function App() {
                         <ProtectedRoute adminOnly>
                             <Layout>
                                 <Admin />
+                            </Layout>
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/study-room"
+                    element={
+                        <ProtectedRoute>
+                            <Layout>
+                                <StudyRoom />
+                            </Layout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/exam-room"
+                    element={
+                        <ProtectedRoute>
+                            <Layout>
+                                <AllExams />
+                            </Layout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/reports"
+                    element={
+                        <ProtectedRoute>
+                            <Layout>
+                                <Reports />
+                            </Layout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/exam-info"
+                    element={
+                        <ProtectedRoute>
+                            <Layout>
+                                <ExamInfo />
+                            </Layout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/all-exams"
+                    element={
+                        <ProtectedRoute>
+                            <Layout>
+                                <AllExams />
+                            </Layout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/tutorials"
+                    element={
+                        <ProtectedRoute>
+                            <Layout>
+                                <Tutorials />
                             </Layout>
                         </ProtectedRoute>
                     }

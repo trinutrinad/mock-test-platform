@@ -14,7 +14,10 @@ CREATE TABLE IF NOT EXISTS public.exams (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   name TEXT NOT NULL,
   duration INTEGER NOT NULL, -- in minutes
+  marks NUMERIC DEFAULT 1,
+  negative_mark NUMERIC DEFAULT 0,
   is_active BOOLEAN DEFAULT false,
+  is_deleted BOOLEAN DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -130,6 +133,25 @@ BEGIN
   RETURN v_attempt_id;
 END;
 $$;
+
+-- DELETE EXAM RPC (avoids FK constraint and RLS issues when deleting exams with attempts)
+CREATE OR REPLACE FUNCTION public.delete_exam(target_exam_id uuid)
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin') THEN
+    RAISE EXCEPTION 'Only admins can delete exams';
+  END IF;
+  DELETE FROM public.attempts WHERE exam_id = target_exam_id;
+  DELETE FROM public.exams WHERE id = target_exam_id;
+  RETURN true;
+END;
+$$;
+GRANT EXECUTE ON FUNCTION public.delete_exam(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.delete_exam(uuid) TO service_role;
 
 -- TRIGGER for new user (Idempotent)
 CREATE OR REPLACE FUNCTION public.handle_new_user()
