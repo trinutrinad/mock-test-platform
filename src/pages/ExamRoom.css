@@ -21,6 +21,84 @@
   color: #dc2626;
 }
 
+/* Empty state: no questions in exam */
+.exam-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  padding: 2rem;
+  text-align: center;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.exam-empty-title {
+  margin: 0 0 0.75rem 0;
+  font-size: 1.5rem;
+  color: #dc2626;
+}
+
+.exam-empty-text {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.exam-empty-tip {
+  margin: 0 0 1.5rem 0;
+  font-size: 0.9rem;
+  color: #4b5563;
+  line-height: 1.5;
+  background: #f3f4f6;
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: left;
+}
+
+.exam-empty-tip strong {
+  color: #374151;
+}
+
+.exam-empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.exam-empty-btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.exam-empty-btn.primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.exam-empty-btn.primary:hover {
+  opacity: 0.95;
+  transform: translateY(-1px);
+}
+
+.exam-empty-btn.secondary {
+  background: white;
+  color: #6366f1;
+  border: 2px solid #6366f1;
+}
+
+.exam-empty-btn.secondary:hover {
+  background: #f5f3ff;
+}
+
 /* Header with Timer */
 .exam-header {
   display: flex;

@@ -6,7 +6,7 @@ import './ExamRoom.css'
 
 export default function ExamRoom() {
     const { examId } = useParams()
-    const { user } = useAuth()
+    const { user, role } = useAuth()
     const navigate = useNavigate()
 
     const [exam, setExam] = useState(null)
@@ -147,7 +147,32 @@ export default function ExamRoom() {
     }
 
     if (loading) return <div className="exam-loading">Loading exam...</div>
-    if (!exam || questions.length === 0) return <div className="exam-error">No questions found</div>
+    if (!exam) return <div className="exam-error">Exam not found.</div>
+    if (questions.length === 0) {
+        return (
+            <div className="exam-empty-state">
+                <h2 className="exam-empty-title">No questions found</h2>
+                <p className="exam-empty-text">
+                    This exam has no questions in the database yet. Questions must be added first.
+                </p>
+                {role === 'admin' && (
+                    <p className="exam-empty-tip">
+                        As admin: go to <strong>Admin Panel</strong> → select this exam → <strong>Manage Questions</strong> → use <strong>Bulk Upload</strong> to add questions from a CSV/Excel file.
+                    </p>
+                )}
+                <div className="exam-empty-actions">
+                    <button type="button" className="exam-empty-btn primary" onClick={() => navigate('/dashboard')}>
+                        Back to Dashboard
+                    </button>
+                    {role === 'admin' && (
+                        <button type="button" className="exam-empty-btn secondary" onClick={() => navigate('/admin')}>
+                            Open Admin Panel
+                        </button>
+                    )}
+                </div>
+            </div>
+        )
+    }
 
     const currentQuestion = questions[currentQuestionIndex]
     const filteredQuestions =
