@@ -1,9 +1,11 @@
 /* Dashboard Container */
 .dashboard-container {
   padding: 2rem;
-  max-width: 1400px;
-  margin: 0 auto;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
   animation: fadeIn 0.3s ease-out;
+  box-sizing: border-box;
 }
 
 @keyframes fadeIn {
@@ -43,11 +45,12 @@
   justify-content: space-between;
   align-items: center;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 2rem;
+  padding: 1.5rem;
   border-radius: 12px;
   color: white;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+  flex-wrap: wrap;
 }
 
 .welcome-title {
@@ -65,12 +68,22 @@
 
 .user-greeting {
   text-align: right;
+  margin-left: auto;
+  min-width: 0;
 }
 
 .greeting-email {
   margin: 0 0 0.5rem 0;
   font-size: 0.95rem;
   opacity: 0.9;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  max-width: 260px;
+}
+
+/* Ensure banner children can shrink to prevent overflow */
+.welcome-banner > div {
+  min-width: 0;
 }
 
 .admin-badge {

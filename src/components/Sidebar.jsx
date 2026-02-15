@@ -32,7 +32,7 @@ export default function Sidebar() {
     <aside className={`sidebar ${isOpen ? 'open' : 'closed'}`}>
       {/* Sidebar Header */}
       <div className="sidebar-header">
-        {isOpen && <h2 className="sidebar-title">EaseToLearn</h2>}
+        {isOpen && <h2 className="sidebar-title">EkLavya</h2>}
         <button className="toggle-btn" onClick={() => setIsOpen(!isOpen)}>
           {isOpen ? '◀' : '▶'}
         </button>

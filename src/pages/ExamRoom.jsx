@@ -74,7 +74,7 @@ export default function ExamRoom() {
         const currentQuestion = questions[currentQuestionIndex]
         setAnswers((prev) => ({
             ...prev,
-            [currentQuestion.id]: option,
+            [currentQuestion.id]: option.toUpperCase(),
         }))
     }
 
@@ -126,7 +126,7 @@ export default function ExamRoom() {
             const answerRecords = Object.entries(answers).map(([questionId, option]) => ({
                 attempt_id: attemptData.id,
                 question_id: questionId,
-                selected_option: option,
+                selected_option: (option || '').toString().toUpperCase(),
             }))
 
             if (answerRecords.length > 0) {
@@ -228,7 +228,7 @@ export default function ExamRoom() {
                                             type="radio"
                                             name="question-option"
                                             value={option}
-                                            checked={answers[currentQuestion.id] === option}
+                                            checked={answers[currentQuestion.id] === option.toUpperCase()}
                                             onChange={() => handleSelectAnswer(option)}
                                             className="option-input"
                                         />

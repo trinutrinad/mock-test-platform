@@ -1,24 +1,41 @@
+:root {
+  --sidebar-width: 250px;
+}
+
+html, body, #root {
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
 .app-layout {
   display: flex;
   min-height: 100vh;
   background: #f9fafb;
+  overflow-x: hidden;
 }
 
 .main-content {
   flex: 1;
-  margin-left: 250px;
+  margin-left: var(--sidebar-width);
   margin-top: 60px;
   transition: margin-left 0.3s ease;
+  max-width: calc(100% - var(--sidebar-width));
+  box-sizing: border-box;
 }
 
 .app-layout.sidebar-closed .main-content {
   margin-left: 80px;
+  max-width: calc(100% - 80px);
 }
 
 .content-wrapper {
   padding: 2rem;
-  max-width: 100%;
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
   min-height: calc(100vh - 60px);
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 /* Scrollbar styling */
