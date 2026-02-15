@@ -1,10 +1,11 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Navbar from './components/Navbar'
+import Layout from './components/Layout'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import ProtectedRoute from './components/ProtectedRoute'
 import Dashboard from './pages/Dashboard'
-import Exam from './pages/Exam'
+import ExamRoom from './pages/ExamRoom'
 import Result from './pages/Result'
 import Leaderboard from './pages/Leaderboard'
 import Admin from './pages/Admin'
@@ -30,7 +31,9 @@ function App() {
                     path="/dashboard"
                     element={
                         <ProtectedRoute>
-                            <Dashboard />
+                            <Layout>
+                                <Dashboard />
+                            </Layout>
                         </ProtectedRoute>
                     }
                 />
@@ -39,7 +42,9 @@ function App() {
                     path="/exam/:examId"
                     element={
                         <ProtectedRoute>
-                            <Exam />
+                            <Layout>
+                                <ExamRoom />
+                            </Layout>
                         </ProtectedRoute>
                     }
                 />
@@ -48,7 +53,9 @@ function App() {
                     path="/result/:attemptId"
                     element={
                         <ProtectedRoute>
-                            <Result />
+                            <Layout>
+                                <Result />
+                            </Layout>
                         </ProtectedRoute>
                     }
                 />
@@ -57,7 +64,9 @@ function App() {
                     path="/leaderboard/:examId"
                     element={
                         <ProtectedRoute>
-                            <Leaderboard />
+                            <Layout>
+                                <Leaderboard />
+                            </Layout>
                         </ProtectedRoute>
                     }
                 />
@@ -66,7 +75,9 @@ function App() {
                     path="/admin"
                     element={
                         <ProtectedRoute adminOnly>
-                            <Admin />
+                            <Layout>
+                                <Admin />
+                            </Layout>
                         </ProtectedRoute>
                     }
                 />

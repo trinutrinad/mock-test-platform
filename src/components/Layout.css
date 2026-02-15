@@ -1,0 +1,78 @@
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+  background: #f9fafb;
+}
+
+.main-content {
+  flex: 1;
+  margin-left: 250px;
+  margin-top: 60px;
+  transition: margin-left 0.3s ease;
+}
+
+.app-layout.sidebar-closed .main-content {
+  margin-left: 80px;
+}
+
+.content-wrapper {
+  padding: 2rem;
+  max-width: 100%;
+  min-height: calc(100vh - 60px);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f9fafb;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .main-content {
+    margin-left: 70px;
+  }
+
+  .content-wrapper {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-content {
+    margin-left: 60px;
+  }
+
+  .content-wrapper {
+    padding: 1rem;
+  }
+}
+
+/* Animation for content transitions */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.content-wrapper {
+  animation: fadeIn 0.3s ease-out;
+}

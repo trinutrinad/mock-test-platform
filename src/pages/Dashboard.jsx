@@ -2,12 +2,15 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import QuickLinks from '../components/QuickLinks'
+import ActivityTracker from '../components/ActivityTracker'
+import './Dashboard.css'
 
 export default function Dashboard() {
     const [exams, setExams] = useState([])
     const [loading, setLoading] = useState(true)
     const [attempts, setAttempts] = useState([])
-    const { user, signOut, role } = useAuth()
+    const { user, role } = useAuth()
 
     useEffect(() => {
         fetchExams()
@@ -28,7 +31,7 @@ export default function Dashboard() {
         } catch (error) {
             console.error('Error fetching exams:', error)
         } finally {
-            if (!user) setLoading(false) // Stop loading if no user yet (will be redirect by ProtectedRoute anyway)
+            if (!user) setLoading(false)
         }
     }
 
@@ -50,50 +53,71 @@ export default function Dashboard() {
         }
     }
 
-    if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading Dashboard...</div>
+    if (loading) return <div className="loading-container">Loading Dashboard...</div>
 
     return (
-        <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
-            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', borderBottom: '1px solid #eee', paddingBottom: '1rem' }}>
+        <div className="dashboard-container">
+            {/* Welcome Banner */}
+            <section className="welcome-banner">
                 <div>
-                    <h1 style={{ marginBottom: '0.5rem' }}>Dashboard</h1>
-                    <p style={{ color: '#666' }}>Welcome, <span style={{ fontWeight: 'bold' }}>{user?.email}</span></p>
-                    {role === 'admin' && <span style={{ background: '#000', color: '#fff', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem' }}>ADMIN</span>}
+                    <h1 className="welcome-title">Welcome back! 👋</h1>
+                    <p className="welcome-subtitle">Ready to ace your exams? Start practicing now or view your progress.</p>
                 </div>
-            </header>
+                <div className="user-greeting">
+                    <p className="greeting-email">{user?.email}</p>
+                    {role === 'admin' && <span className="admin-badge">Admin</span>}
+                </div>
+            </section>
 
-            <section style={{ marginBottom: '3rem' }}>
-                <h2 style={{ marginBottom: '1.5rem', borderLeft: '4px solid #2563eb', paddingLeft: '1rem' }}>Available Exams</h2>
+            {/* Quick Access Links */}
+            <QuickLinks />
+
+            {/* Activity Tracker */}
+            <ActivityTracker />
+
+            {/* Available Exams Section */}
+            <section className="exams-section">
+                <h2 className="section-title">📝 Available Exams</h2>
                 {exams.length === 0 ? (
-                    <p style={{ color: '#666', fontStyle: 'italic' }}>No active exams at the moment.</p>
+                    <div className="empty-state">
+                        <p className="empty-text">No active exams at the moment.</p>
+                    </div>
                 ) : (
-                    <div style={{ display: 'grid', gap: '1.5rem', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
+                    <div className="exams-grid">
                         {exams.map(exam => {
                             const hasAttempted = attempts.some(a => a.exam_id === exam.id)
+                            const attempt = attempts.find(a => a.exam_id === exam.id)
                             return (
-                                <div key={exam.id} style={{ border: '1px solid #eee', padding: '1.5rem', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', background: 'white' }}>
-                                    <h3 style={{ marginBottom: '0.5rem' }}>{exam.name}</h3>
-                                    <p style={{ color: '#666', marginBottom: '1.5rem' }}>Duration: {exam.duration} minutes</p>
+                                <div key={exam.id} className="exam-card">
+                                    <div className="exam-header">
+                                        <h3 className="exam-title">{exam.name}</h3>
+                                        {hasAttempted && <span className="completed-badge">✓ Completed</span>}
+                                    </div>
 
-                                    {hasAttempted ? (
-                                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                            <button disabled style={{ width: '100%', padding: '0.75rem', background: '#ccc', color: '#666', border: 'none', borderRadius: '4px', cursor: 'not-allowed' }}>
-                                                Completed
-                                            </button>
-                                            <Link to={`/result/${attempts.find(a => a.exam_id === exam.id).id}`} style={{ fontSize: '0.9rem', color: '#2563eb', whiteSpace: 'nowrap' }}>
-                                                View Result
-                                            </Link>
+                                    <div className="exam-meta">
+                                        <div className="meta-item">
+                                            <span className="meta-icon">⏱️</span>
+                                            <span className="meta-text">{exam.duration} minutes</span>
                                         </div>
-                                    ) : (
-                                        <Link to={`/exam/${exam.id}`}>
-                                            <button style={{ width: '100%', padding: '0.75rem', background: '#2563eb', color: 'white', border: 'none', cursor: 'pointer', borderRadius: '4px', fontWeight: '500' }}>
-                                                Start Exam
-                                            </button>
-                                        </Link>
-                                    )}
-                                    <div style={{ marginTop: '0.5rem', textAlign: 'center' }}>
-                                        <Link to={`/leaderboard/${exam.id}`} style={{ fontSize: '0.9rem', color: '#666', textDecoration: 'none' }}>
-                                            🏆 View Leaderboard
+                                    </div>
+
+                                    <div className="exam-actions">
+                                        {hasAttempted ? (
+                                            <>
+                                                <button className="btn btn-completed" disabled>
+                                                    ✓ Completed
+                                                </button>
+                                                <Link to={`/result/${attempt.id}`} className="btn-secondary">
+                                                    View Result →
+                                                </Link>
+                                            </>
+                                        ) : (
+                                            <Link to={`/exam/${exam.id}`} className="btn btn-primary">
+                                                Start Exam →
+                                            </Link>
+                                        )}
+                                        <Link to={`/leaderboard/${exam.id}`} className="btn-secondary">
+                                            🏆 Leaderboard
                                         </Link>
                                     </div>
                                 </div>
@@ -103,29 +127,32 @@ export default function Dashboard() {
                 )}
             </section>
 
-            <section>
-                <h2 style={{ marginBottom: '1.5rem', borderLeft: '4px solid #10b981', paddingLeft: '1rem' }}>Your Past Attempts</h2>
+            {/* Past Attempts Section */}
+            <section className="attempts-section">
+                <h2 className="section-title">📊 Your Exam History</h2>
                 {attempts.length === 0 ? (
-                    <p style={{ color: '#666', fontStyle: 'italic' }}>You haven't taken any exams yet.</p>
+                    <div className="empty-state">
+                        <p className="empty-text">You haven't taken any exams yet. Start practicing now!</p>
+                    </div>
                 ) : (
-                    <div style={{ overflowX: 'auto' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '1rem', minWidth: '600px' }}>
+                    <div className="attempts-table-wrapper">
+                        <table className="attempts-table">
                             <thead>
-                                <tr style={{ textAlign: 'left', background: '#f8f9fa' }}>
-                                    <th style={{ padding: '1rem', borderBottom: '2px solid #ddd' }}>Exam</th>
-                                    <th style={{ padding: '1rem', borderBottom: '2px solid #ddd' }}>Score</th>
-                                    <th style={{ padding: '1rem', borderBottom: '2px solid #ddd' }}>Date</th>
-                                    <th style={{ padding: '1rem', borderBottom: '2px solid #ddd' }}>Action</th>
+                                <tr>
+                                    <th>Exam Name</th>
+                                    <th>Score</th>
+                                    <th>Date</th>
+                                    <th>Action</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {attempts.map(attempt => (
-                                    <tr key={attempt.id} style={{ borderBottom: '1px solid #eee' }}>
-                                        <td style={{ padding: '1rem' }}>{attempt.exams?.name || 'Unknown Exam'}</td>
-                                        <td style={{ padding: '1rem', fontWeight: 'bold' }}>{attempt.score}</td>
-                                        <td style={{ padding: '1rem' }}>{new Date(attempt.submitted_at).toLocaleDateString()} {new Date(attempt.submitted_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
-                                        <td style={{ padding: '1rem' }}>
-                                            <Link to={`/result/${attempt.id}`} style={{ color: '#2563eb', textDecoration: 'none', fontWeight: '500' }}>View Result</Link>
+                                    <tr key={attempt.id}>
+                                        <td className="exam-name">{attempt.exams?.name || 'Unknown Exam'}</td>
+                                        <td className="score">{attempt.score}</td>
+                                        <td className="date">{new Date(attempt.submitted_at).toLocaleDateString()} {new Date(attempt.submitted_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+                                        <td>
+                                            <Link to={`/result/${attempt.id}`} className="view-link">View</Link>
                                         </td>
                                     </tr>
                                 ))}
