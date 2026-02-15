@@ -210,7 +210,7 @@ export default function ExamRoom() {
                     </div>
 
                     <div className="question-content">
-                        <h2 className="question-text">{currentQuestion.question_text}</h2>
+                        <h2 className="question-text">{currentQuestion.question}</h2>
 
                         {currentQuestion.image_url && (
                             <img src={currentQuestion.image_url} alt="Question visual" className="question-image" />
