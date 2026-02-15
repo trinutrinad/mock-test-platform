@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import './Sidebar.css'
 
-export default function Sidebar() {
+export default function Sidebar({ mobileOpen = false, onClose = () => {}, onNavigate = () => {} }) {
   const [isOpen, setIsOpen] = useState(true)
   const location = useLocation()
   const { signOut, role } = useAuth()
@@ -29,37 +29,46 @@ export default function Sidebar() {
   const isActive = (path) => location.pathname === path
 
   return (
-    <aside className={`sidebar ${isOpen ? 'open' : 'closed'}`}>
-      {/* Sidebar Header */}
-      <div className="sidebar-header">
-        {isOpen && <h2 className="sidebar-title">EkLavya</h2>}
-        <button className="toggle-btn" onClick={() => setIsOpen(!isOpen)}>
-          {isOpen ? '◀' : '▶'}
-        </button>
-      </div>
+    <>
+      {/* Mobile backdrop */}
+      <div
+        className={`sidebar-backdrop ${mobileOpen ? 'visible' : ''}`}
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      <aside className={`sidebar ${isOpen ? 'open' : 'closed'} ${mobileOpen ? 'mobile-open' : ''}`}>
+        {/* Sidebar Header */}
+        <div className="sidebar-header">
+          {isOpen && <h2 className="sidebar-title">EkLavya</h2>}
+          <button className="toggle-btn" onClick={() => setIsOpen(!isOpen)} aria-label="Toggle sidebar">
+            {isOpen ? '◀' : '▶'}
+          </button>
+        </div>
 
-      {/* Navigation Menu */}
-      <nav className="sidebar-menu">
-        {menuItems.map((item) => (
-          <Link
-            key={item.path}
-            to={item.path}
-            className={`menu-item ${isActive(item.path) ? 'active' : ''}`}
-            title={item.label}
-          >
-            <span className="menu-icon">{item.icon}</span>
-            {isOpen && <span className="menu-label">{item.label}</span>}
-          </Link>
-        ))}
-      </nav>
+        {/* Navigation Menu */}
+        <nav className="sidebar-menu">
+          {menuItems.map((item) => (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={`menu-item ${isActive(item.path) ? 'active' : ''}`}
+              title={item.label}
+              onClick={onNavigate}
+            >
+              <span className="menu-icon">{item.icon}</span>
+              {isOpen && <span className="menu-label">{item.label}</span>}
+            </Link>
+          ))}
+        </nav>
 
-      {/* Sidebar Footer */}
-      <div className="sidebar-footer">
-        <button onClick={signOut} className="logout-btn" title="Logout">
-          <span className="menu-icon">🚪</span>
-          {isOpen && <span className="menu-label">Logout</span>}
-        </button>
-      </div>
-    </aside>
+        {/* Sidebar Footer */}
+        <div className="sidebar-footer">
+          <button onClick={signOut} className="logout-btn" title="Logout">
+            <span className="menu-icon">🚪</span>
+            {isOpen && <span className="menu-label">Logout</span>}
+          </button>
+        </div>
+      </aside>
+    </>
   )
 }

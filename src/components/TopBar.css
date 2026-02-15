@@ -10,9 +10,35 @@
   justify-content: space-between;
   align-items: center;
   padding: 0 1.5rem;
-  z-index: 999;
+  z-index: 998;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   transition: left 0.3s ease;
+}
+
+/* Hamburger - hidden on desktop */
+.topbar-menu-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  margin: 0;
+  margin-right: 0.5rem;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #374151;
+}
+
+.topbar-menu-icon {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: currentColor;
+  box-shadow: 0 -6px 0 currentColor, 0 6px 0 currentColor;
+  border-radius: 1px;
 }
 
 .topbar.sidebar-closed {
@@ -22,6 +48,8 @@
 .topbar-left {
   display: flex;
   align-items: center;
+  min-width: 0;
+  flex: 1;
 }
 
 .course-selector {
@@ -45,7 +73,8 @@
   color: #111827;
   cursor: pointer;
   transition: all 0.3s ease;
-  min-width: 180px;
+  min-width: 120px;
+  max-width: 100%;
 }
 
 .course-dropdown:hover {
@@ -127,8 +156,12 @@
 /* Responsive */
 @media (max-width: 768px) {
   .topbar {
-    left: 70px;
-    padding: 0 1rem;
+    left: 0;
+    padding: 0 0.75rem 0 1rem;
+  }
+
+  .topbar-menu-toggle {
+    display: flex;
   }
 
   .course-dropdown {
@@ -152,9 +185,9 @@
 
 @media (max-width: 480px) {
   .topbar {
-    left: 60px;
-    padding: 0 0.75rem;
-    height: 55px;
+    left: 0;
+    padding: 0 0.5rem 0 0.75rem;
+    height: 52px;
   }
 
   .course-selector {

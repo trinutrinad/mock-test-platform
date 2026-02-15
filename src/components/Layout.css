@@ -57,24 +57,22 @@ html, body, #root {
   background: #9ca3af;
 }
 
-/* Responsive */
+/* Mobile: full-width content (sidebar becomes overlay) */
 @media (max-width: 768px) {
   .main-content {
-    margin-left: 70px;
-  }
-
-  .content-wrapper {
-    padding: 1.5rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .main-content {
-    margin-left: 60px;
+    margin-left: 0;
+    max-width: 100%;
   }
 
   .content-wrapper {
     padding: 1rem;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .content-wrapper {
+    padding: 0.75rem;
   }
 }
 

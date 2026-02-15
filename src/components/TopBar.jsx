@@ -1,11 +1,14 @@
 import { useAuth } from '../context/AuthContext'
 import './TopBar.css'
 
-export default function TopBar() {
+export default function TopBar({ onMenuClick }) {
   const { user } = useAuth()
 
   return (
     <div className="topbar">
+      <button type="button" className="topbar-menu-toggle" onClick={onMenuClick} aria-label="Open menu">
+        <span className="topbar-menu-icon" />
+      </button>
       <div className="topbar-left">
         <div className="course-selector">
           <label htmlFor="course">Course:</label>
