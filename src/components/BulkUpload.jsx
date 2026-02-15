@@ -5,6 +5,7 @@ import * as XLSX from 'xlsx'
 import * as pdfjsLib from 'pdfjs-dist'
 import mammoth from 'mammoth'
 import { mapQuestionsWithAI } from '../services/aiService'
+import { stripBOM, validateCSVHeaders, parseCSVRows, sanitizeForDB } from '../services/csvUploadService'
 
 // Initialize PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
@@ -58,12 +59,68 @@ export default function BulkUpload({ examId, onUploadSuccess }) {
     // --- 1. Structured Parsing (CSV/Excel) ---
 
     const parseCSV = (file) => {
-        Papa.parse(file, {
-            header: true,
-            skipEmptyLines: true,
-            complete: (results) => validateAndPreview(results.data, false),
-            error: (err) => setError('Failed to parse CSV: ' + err.message)
-        })
+        try {
+            const reader = new FileReader()
+            reader.onload = (e) => {
+                try {
+                    // Read as text using UTF-8 and strip BOM if present
+                    let text = e.target.result
+                    text = stripBOM(text) // Remove UTF-8 BOM if present
+
+                    // Parse CSV from string so we control encoding/BOM handling
+                    Papa.parse(text, {
+                        header: true,
+                        skipEmptyLines: true,
+                        dynamicTyping: false,
+                        transform: (val) => (typeof val === 'string' ? val.trim() : val),
+                        complete: (results) => {
+                            try {
+                                // Dynamically validate headers
+                                const fields = (results.meta && results.meta.fields) || []
+                                const headerValidation = validateCSVHeaders(fields)
+
+                                if (!headerValidation.valid) {
+                                    setError('CSV header validation failed: ' + headerValidation.warnings.join('; ') + '\nFound headers: ' + fields.join(', '))
+                                    return
+                                }
+
+                                // Log header validation warnings (bilingual detection, etc.)
+                                if (headerValidation.warnings.length > 0) {
+                                    console.log('CSV Header Warnings:', headerValidation.warnings.join('\n'))
+                                }
+
+                                // Parse rows with bilingual support
+                                const { processedRows, summary } = parseCSVRows(results.data, examId, {
+                                    bilingual: new Map(),
+                                    single: {},
+                                    mappedHeaders: headerValidation.mappedHeaders
+                                })
+
+                                console.log('CSV Parsing Summary:', summary)
+                                console.log('Validation Logs:', summary.validationLogs)
+
+                                validateAndPreview(processedRows, false)
+                            } catch (validationErr) {
+                                console.error('Header/row validation error:', validationErr)
+                                setError('CSV validation failed: ' + validationErr.message)
+                            }
+                        },
+                        error: (err) => {
+                            console.error('PapaParse error:', err)
+                            setError('Failed to parse CSV: ' + (err && err.message ? err.message : JSON.stringify(err)))
+                        }
+                    })
+                } catch (inner) {
+                    console.error('CSV processing error:', inner)
+                    setError('CSV processing failed: ' + inner.message)
+                }
+            }
+            // Use UTF-8 explicitly; browsers may handle BOM but we strip it via stripBOM
+            reader.readAsText(file, 'utf-8')
+        } catch (err) {
+            console.error('parseCSV failed:', err)
+            setError('Failed to read CSV file: ' + err.message)
+        }
     }
 
     const parseExcel = (file) => {
@@ -119,80 +176,118 @@ export default function BulkUpload({ examId, onUploadSuccess }) {
     // --- Common Validation & Preview Logic ---
 
     const validateAndPreview = (data, isTypeset = false) => {
-        const findFirst = (obj, candidates) => {
-            for (const c of candidates) {
-                if (Object.prototype.hasOwnProperty.call(obj, c) && obj[c] !== undefined && obj[c] !== null && String(obj[c]).toString().trim() !== '') return obj[c]
-            }
-            return undefined
-        }
-
-        const parseCorrectAnswer = (raw, options) => {
-            if (raw === undefined || raw === null) return { letter: '', index: -1 }
-            const str = String(raw).trim()
-            if (!str) return { letter: '', index: -1 }
-
-            // A/B/C/D
-            const up = str.toUpperCase()
-            if (['A', 'B', 'C', 'D'].includes(up)) return { letter: up, index: ['A', 'B', 'C', 'D'].indexOf(up) }
-
-            // 1-4
-            const num = parseInt(str, 10)
-            if (!isNaN(num) && num >= 1 && num <= 4) {
-                const idx = num - 1
-                return { letter: ['A', 'B', 'C', 'D'][idx], index: idx }
+        // For CSV/Excel: data is pre-validated by parseCSVRows
+        // For PDF/Word: data is from AI and needs validation
+        
+        if (isTypeset) {
+            // AI-generated data from PDF/Word needs validation
+            const findFirst = (obj, candidates) => {
+                for (const c of candidates) {
+                    if (Object.prototype.hasOwnProperty.call(obj, c) && obj[c] !== undefined && obj[c] !== null && String(obj[c]).toString().trim() !== '') return obj[c]
+                }
+                return undefined
             }
 
-            // exact option text match (case-insensitive)
-            if (Array.isArray(options)) {
-                const normalized = options.map(o => o ? String(o).trim().toLowerCase() : '')
-                const matchIndex = normalized.indexOf(str.toLowerCase())
-                if (matchIndex !== -1) return { letter: ['A', 'B', 'C', 'D'][matchIndex], index: matchIndex }
+            const parseCorrectAnswer = (raw, options) => {
+                if (raw === undefined || raw === null) return { letter: '', index: -1 }
+                const str = String(raw).trim()
+                if (!str) return { letter: '', index: -1 }
+
+                // A/B/C/D
+                const up = str.toUpperCase()
+                if (['A', 'B', 'C', 'D'].includes(up)) return { letter: up, index: ['A', 'B', 'C', 'D'].indexOf(up) }
+
+                // 1-4
+                const num = parseInt(str, 10)
+                if (!isNaN(num) && num >= 1 && num <= 4) {
+                    const idx = num - 1
+                    return { letter: ['A', 'B', 'C', 'D'][idx], index: idx }
+                }
+
+                // exact option text match (case-insensitive)
+                if (Array.isArray(options)) {
+                    const normalized = options.map(o => o ? String(o).trim().toLowerCase() : '')
+                    const matchIndex = normalized.indexOf(str.toLowerCase())
+                    if (matchIndex !== -1) return { letter: ['A', 'B', 'C', 'D'][matchIndex], index: matchIndex }
+                }
+
+                return { letter: '', index: -1 }
             }
 
-            return { letter: '', index: -1 }
-        }
+            const processedRows = data.map((row, index) => {
+                try {
+                    if (!row || typeof row !== 'object') {
+                        return {
+                            id: index,
+                            exam_id: examId,
+                            question: '',
+                            option_a: '',
+                            option_b: '',
+                            option_c: '',
+                            option_d: '',
+                            correct_option: '',
+                            correct_index: -1,
+                            errors: ['Malformed Row'],
+                            validationLog: `Row ${index + 2}: Malformed`
+                        }
+                    }
 
-        const processedRows = data.map((row, index) => {
-            const normalizedRow = {}
-            Object.keys(row).forEach(key => normalizedRow[key.toLowerCase().trim()] = row[key])
+                    const normalizedRow = {}
+                    Object.keys(row).forEach(key => normalizedRow[key.toLowerCase().trim()] = row[key])
 
-            // Ignore Question_Number, Section, Subject if present — they simply won't be mapped
-            // Lookup candidates for common column names
-            const question = findFirst(normalizedRow, ['question', 'question_text', 'q'])
-            const option_a = findFirst(normalizedRow, ['option_a', 'option a', 'a', 'opt_a', 'opt a', 'option1', 'option_1'])
-            const option_b = findFirst(normalizedRow, ['option_b', 'option b', 'b', 'opt_b', 'opt b', 'option2', 'option_2'])
-            const option_c = findFirst(normalizedRow, ['option_c', 'option c', 'c', 'opt_c', 'opt c', 'option3', 'option_3'])
-            const option_d = findFirst(normalizedRow, ['option_d', 'option d', 'd', 'opt_d', 'opt d', 'option4', 'option_4'])
-            const correct_raw = findFirst(normalizedRow, ['correct_answer', 'correct answer', 'correct', 'answer', 'correct_option', 'correctoption'])
+                    const question = findFirst(normalizedRow, ['question', 'question_text', 'q'])
+                    const option_a = findFirst(normalizedRow, ['option_a', 'option a', 'a', 'opt_a', 'opt a', 'option1', 'option_1'])
+                    const option_b = findFirst(normalizedRow, ['option_b', 'option b', 'b', 'opt_b', 'opt b', 'option2', 'option_2'])
+                    const option_c = findFirst(normalizedRow, ['option_c', 'option c', 'c', 'opt_c', 'opt c', 'option3', 'option_3'])
+                    const option_d = findFirst(normalizedRow, ['option_d', 'option d', 'd', 'opt_d', 'opt d', 'option4', 'option_4'])
+                    const correct_raw = findFirst(normalizedRow, ['correct_answer', 'correct answer', 'correct', 'answer', 'correct_option', 'correctoption'])
 
-            const errors = []
-            if (!question) errors.push('Missing Question')
-            if (!option_a || !option_b || !option_c || !option_d) errors.push('Missing Options')
+                    const errors = []
+                    if (!question) errors.push('Missing Question')
+                    if (!option_a || !option_b || !option_c || !option_d) errors.push('Missing Options')
 
-            const options = [option_a || '', option_b || '', option_c || '', option_d || '']
-            const parsed = parseCorrectAnswer(correct_raw, options)
-            if (parsed.index === -1) errors.push('Invalid Answer')
+                    const options = [option_a || '', option_b || '', option_c || '', option_d || '']
+                    const parsed = parseCorrectAnswer(correct_raw, options)
+                    if (parsed.index === -1) errors.push('Invalid Answer')
 
-            return {
-                id: index, // Temp ID for React keys
-                exam_id: examId,
-                question: question || '',
-                option_a: option_a || '',
-                option_b: option_b || '',
-                option_c: option_c || '',
-                option_d: option_d || '',
-                // keep `correct_option` as letter (A-D) for compatibility with DB/UI
-                correct_option: parsed.letter || '',
-                // also expose zero-based index as requested
-                correct_index: parsed.index,
-                errors: errors
-            }
-        })
-
-        if (processedRows.length === 0) {
-            setError('No questions found in file.')
-        } else {
+                    return {
+                        id: index,
+                        exam_id: examId,
+                        question: question || '',
+                        option_a: option_a || '',
+                        option_b: option_b || '',
+                        option_c: option_c || '',
+                        option_d: option_d || '',
+                        correct_option: parsed.letter || '',
+                        correct_index: parsed.index,
+                        errors: errors,
+                        validationLog: errors.length === 0 ? `Row ${index + 2}: Valid` : `Row ${index + 2}: ${errors.join(', ')}`
+                    }
+                } catch (rowErr) {
+                    console.error('Row processing failed at index', index, rowErr)
+                    return {
+                        id: index,
+                        exam_id: examId,
+                        question: '',
+                        option_a: '',
+                        option_b: '',
+                        option_c: '',
+                        option_d: '',
+                        correct_option: '',
+                        correct_index: -1,
+                        errors: ['Malformed Row', rowErr.message || String(rowErr)],
+                        validationLog: `Row ${index + 2}: Exception - ${rowErr.message}`
+                    }
+                }
+            })
             setPreview(processedRows)
+        } else {
+            // CSV/Excel is already pre-validated
+            setPreview(data)
+        }
+
+        if (data.length === 0) {
+            setError('No questions found in file.')
         }
     }
 
@@ -244,13 +339,14 @@ export default function BulkUpload({ examId, onUploadSuccess }) {
 
         setUploading(true)
         try {
-            // Prepare rows for insert (keep existing DB-compatible fields)
-            const rowsToInsert = validRows.map(({ id, errors, correct_index, ...rest }) => ({
-                ...rest,
-                exam_id: examId
-            }))
+            // Prepare rows for insert using sanitizeForDB for proper UTF-8 handling
+            const rowsToInsert = sanitizeForDB(validRows)
 
-            if (invalidRows.length > 0) console.log('BulkUpload - skipping invalid rows:', invalidRows)
+            if (invalidRows.length > 0) {
+                console.log('BulkUpload - skipping invalid rows:', invalidRows.map(r => ({ row: r.id + 2, errors: r.errors, log: r.validationLog })))
+            }
+
+            if (!supabase) throw new Error('Database client not configured')
 
             const { error } = await supabase.from('questions').insert(rowsToInsert)
             if (error) throw error
